@@ -1,0 +1,87 @@
+<?php
+header("Content-Type: text/html;charset=utf-8");
+require_once("connect.php");
+
+$nombre = $_POST["nombre"];
+$ano = $_POST["ano"];
+$descripcion = $_POST["descripcion"];
+$tipo = $_POST["tipo"];  
+$documento = $_FILES['documento'];
+//comprobamos si ha ocurrido un error.
+if ($_FILES["documento"]["error"] > 0)
+{
+  ?>
+  <script languaje="javascript">
+  alert("ha ocurrido un error");
+  location.href = document.referrer;
+  </script>
+  <? 
+} 
+else 
+{
+	//ahora vamos a verificar si el tipo de archivo es un tipo de imagen permitido.
+	//y que el tamano del archivo no exceda los 100kb
+	$permitidos = array("image/jpg", "image/jpeg", "image/gif", "image/png","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/pdf","application/msword");
+	$limite_kb = 10000000000;
+	if (in_array($_FILES['documento']['type'], $permitidos) && $_FILES['documento']['size'] <= $limite_kb * 1024)
+	{
+		//esta es la ruta donde copiaremos la documento
+		//recuerden que deben crear un directorio con este mismo nombre
+		//en el mismo lugar donde se encuentra el archivo subir.php
+		$ruta = "estadisticas/" . $_FILES['documento']['name'];
+		//comprobamos si este archivo existe para no volverlo a copiar.
+		//pero si quieren pueden obviar esto si no es necesario.
+		//o pueden darle otro nombre para que no sobreescriba el actual.
+		if (!file_exists($ruta))
+		{
+			//aqui movemos el archivo desde la ruta temporal a nuestra ruta
+			//usamos la variable $resultado para almacenar el resultado del proceso de mover el archivo
+			//almacenara true o false
+			$resultado = @move_uploaded_file($_FILES["documento"]["tmp_name"], $ruta);
+			if ($resultado)
+			{
+				$documento = $_FILES['documento']['name'];
+				@mysql_query("INSERT INTO estadistica (nombre, ano, documento, categoria, descripcion) VALUES ('$nombre','$ano', '$documento','$tipo', '$descripcion')");
+
+				 	?>
+  					<script languaje="javascript">
+  					alert("el archivo ha sido movido exitosamente");
+  					location.href = document.referrer;
+  					</script>
+ 					<? 
+			} 
+			else 
+			{
+					?>
+  					<script languaje="javascript">
+  					alert("ocurrio un error al mover el archivo.");
+  					location.href = document.referrer;
+  					</script>
+ 					<? 
+			}
+		} 
+		else 
+		{
+					?>
+  					<script languaje="javascript">
+  					location.href = document.referrer;
+  					</script>
+ 					<? 
+			        echo $_FILES['documento']['name'] . ", este archivo existe";
+		}
+	} 
+	else 
+	  {
+	  	?>
+  		<script languaje="javascript">
+  		alert("archivo no permitido, es tipo de archivo prohibido o excede el tamano de $limite_kb Kilobytes");
+  		location.href = document.referrer;
+  		</script>
+ 		<?
+		
+	  }
+}
+
+?>
+
+?>
